@@ -11,6 +11,8 @@
     clan.inputs.systems.follows = "systems";
     clan.inputs.flake-parts.follows = "flake-parts";
 
+    preservation.url = "github:nix-community/preservation";
+
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
   };
@@ -27,6 +29,7 @@
       imports = [
         ./flake
         ./lib
+        ./modules
       ];
     };
 }

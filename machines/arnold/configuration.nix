@@ -1,13 +1,24 @@
+{ self, ... }:
 {
   imports = [
-
+    self.nixosModules.default
   ];
 
   services.openssh.enable = true;
 
+  security.sudo.wheelNeedsPassword = false;
   users = {
     mutableUsers = false;
     users = {
+      user = {
+        isNormalUser = true;
+        openssh.authorizedKeys.keys = [
+          "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIPozrPzzJpzXoDLvnp/bYd7Jj7jWsP7GKfuLmcvQxy7pAAAAFHNzaDp5dWJpa2V5LTUtbmZjLTAx ssh:yubikey-5-nfc-01"
+          "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIC7OWf8mT9DjB73bAwbk5W9Kmf2nlpuGK6e08+FiuOWvAAAAFHNzaDp5dWJpa2V5LTUtbmZjLTAy ssh:yubikey-5-nfc-02"
+        ];
+        extraGroups = [ "wheel" ];
+
+      };
       root = {
         openssh.authorizedKeys.keys = [
           "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIPozrPzzJpzXoDLvnp/bYd7Jj7jWsP7GKfuLmcvQxy7pAAAAFHNzaDp5dWJpa2V5LTUtbmZjLTAx ssh:yubikey-5-nfc-01"
