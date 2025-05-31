@@ -16,5 +16,7 @@ in
       tmpfsHugeMemoryPages = "within_size";
     };
     zramSwap.enable = mkDefault true;
+
+    security.sudo.wheelNeedsPassword = mkDefault false;
   };
 }

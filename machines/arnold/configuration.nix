@@ -1,12 +1,25 @@
-{ self, ... }:
+{ self, lib, ... }:
 {
   imports = [
     self.nixosModules.default
   ];
 
-  services.openssh.enable = true;
+  ewood = {
+    perlless.enable = true;
+  };
 
-  security.sudo.wheelNeedsPassword = false;
+  system.etc.overlay = {
+    enable = lib.mkDefault true;
+    mutable = lib.mkDefault false;
+  };
+
+  # None default nixos options
+  facter.detected.graphics.enable = lib.mkDefault false;
+
+  hardware = {
+    enableAllFirmware = false;
+  };
+
   users = {
     mutableUsers = false;
     users = {

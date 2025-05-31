@@ -9,8 +9,13 @@
     "${modulesPath}/installer/sd-card/sd-image-aarch64.nix"
   ];
 
-  # Prevent host becoming unreachable on wifi after some time.
-  networking.useDHCP = lib.mkDefault true;
+  # Don't bloat the system with uneeded tools
+  disabledModules = [
+    /har
+    "${toString modulesPath}/profiles/base.nix"
+  ];
+  boot.supportedFilesystems.zfs = false;
+  sdImage.compressImage = false;
 
   nixpkgs = {
     overlays = [
@@ -21,9 +26,6 @@
       })
     ];
   };
-
-  boot.supportedFilesystems.zfs = lib.mkForce false;
-  sdImage.compressImage = false;
 
   environment.systemPackages = [
     pkgs.libraspberrypi
@@ -59,7 +61,8 @@
     };
   };
 
+  # Prevent host becoming unreachable on wifi after some time.
+  networking.useDHCP = lib.mkDefault true;
   nixpkgs.hostPlatform = "aarch64-linux";
-
   system.stateVersion = "25.11";
 }
