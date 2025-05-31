@@ -2,5 +2,9 @@
   {
     "publickey": "age1yubikey1qtsepu3xywkfe6lnxvdt2ht62hqpxzu4nde5fj8r0nqgcj7zrrs353ha9ys",
     "type": "age"
+  },
+  {
+    "publickey": "age1yubikey1qtueyp65tj2ww3nxnatq3z4h2yn5g9492l90r0acsdsguve294eycxky7n8",
+    "type": "age"
   }
 ]
