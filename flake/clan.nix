@@ -13,7 +13,10 @@
     inventory = {
       machines = {
         arnold = {
-          tags = [ "server" ];
+          tags = [
+            "server"
+            "wifi"
+          ];
         };
       };
 
@@ -55,7 +58,18 @@
             tags."all" = { };
           };
         };
-
+        "wifi" = {
+          module = {
+            name = "wifi";
+            input = "clan";
+          };
+          roles."default" = {
+            tags."wifi" = { };
+            settings = {
+              networks."home".enable = true;
+            };
+          };
+        };
       };
     };
   };

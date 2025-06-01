@@ -6,6 +6,8 @@
 }:
 {
   ewood = {
+    # Perl is required for the wifi clan service
+    perlless.forbidPerl = false;
     firewall.interfaces = {
       "end0" = {
         roles = [ "blockFromLAN" ];
