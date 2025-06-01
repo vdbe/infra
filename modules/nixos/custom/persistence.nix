@@ -2,6 +2,8 @@
   inputs,
   lib,
   config,
+  options,
+  pkgs,
   ...
 }:
 let
@@ -12,6 +14,21 @@ let
   inherit (lib.options) mkOption;
 
   inherit (config.users) users;
+
+  sopsSecrets = config.sops.secrets;
+  sopsRegularSecrets = (filterAttrs (_: v: !v.neededForUsers) sopsSecrets) != { };
+  sopsSecretsForUsers = (filterAttrs (_: v: v.neededForUsers) sopsSecrets) != { };
+
+  useSystemdActivation =
+    (options.systemd ? sysusers && config.systemd.sysusers.enable)
+    || (options.services ? userborn && config.services.userborn.enable);
+
+  sopsSystemdInstallSecrets = (sopsRegularSecrets && useSystemdActivation);
+  sopsSystemdInstallSecretsForUsers = (sopsSecretsForUsers && useSystemdActivation);
+  sopsActivationScriptssetupSecrets = (sopsRegularSecrets && !useSystemdActivation);
+  sopsActivationScriptsSetupSecretsForUsers = (sopsSecretsForUsers && !useSystemdActivation);
+
+  persistentSopsPath = "${cfg.path}/data/var/lib/sops-nix";
 
   cfg = config.ewood.persistence;
 in
@@ -83,5 +100,48 @@ in
       };
     };
 
+    # Link sops dir
+    # Needs to happen earlier then normal persistance services.
+    #
+    # Based on:
+    #   - https://github.com/Mic92/sops-nix/blob/8d215e1c981be3aa37e47aeabd4e61bb069548fd/modules/sops/default.nix
+    #   - https://github.com/Mic92/sops-nix/blob/8d215e1c981be3aa37e47aeabd4e61bb069548fd/modules/sops/secrets-for-users/default.nix
+    systemd.services = {
+      link-sops-dir = lib.mkIf (sopsSystemdInstallSecrets || sopsSystemdInstallSecretsForUsers) {
+        wantedBy =
+          (lib.optional sopsSystemdInstallSecrets "sops-install-secrets.service")
+          ++ (lib.optional sopsSystemdInstallSecretsForUsers "sops-install-secrets-for-users.service");
+        before =
+          (lib.optional sopsSystemdInstallSecrets "sops-install-secrets.service")
+          ++ (lib.optional sopsSystemdInstallSecretsForUsers "sops-install-secrets-for-users.service");
+        unitConfig.DefaultDependencies = "no";
+
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = pkgs.writeShellScript "link-sops-nix-dir" ''
+            mkdir -p /var/lib
+            rm -rf /var/lib/sops-nix
+            ln -sfn "${persistentSopsPath}"  -t /var/lib
+          '';
+        };
+      };
+    };
+
+    system.activationScripts =
+      mkIf (sopsActivationScriptssetupSecrets || sopsActivationScriptsSetupSecretsForUsers)
+        {
+          linkSopsDir = {
+            # Run after /dev has been mounted
+            deps = [ "specialfs" ];
+            text = ''
+              # Needed by sops setupSecrets/setupSecretsForUsers
+              [ -e /run/current-system ] || echo setting up keys...
+              rm -rf /var/lib/sops-nix
+              ln -sfn ${persistentSopsPath} -t /var/lib
+            '';
+          };
+          setupSecrets.deps = mkIf sopsActivationScriptssetupSecrets [ "linkSopsDir" ];
+          setupSecretsForUsers.deps = mkIf sopsActivationScriptsSetupSecretsForUsers [ "linkSopsDir" ];
+        };
   };
 }

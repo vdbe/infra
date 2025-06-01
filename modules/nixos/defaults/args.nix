@@ -1,7 +1,17 @@
-{ pkgs, inputs, ... }:
 {
-  config = {
+  pkgs,
+  inputs,
+  lib,
+  ...
+}:
+{
+  options = {
+    foo = lib.mkOption {
+      type = lib.types.anything;
+    };
+  };
 
+  config = rec {
     _module.args =
       let
         inherit (pkgs.stdenv) system;
@@ -22,6 +32,10 @@
       {
         inherit inputs';
         self' = inputs'.self;
+        mypkgs = inputs'.mypkgs.legacyPackages;
+
       };
+
+    foo = _module.args;
   };
 }

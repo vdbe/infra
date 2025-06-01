@@ -1,6 +1,7 @@
+{ self, ... }:
 {
   imports = [
     ./nixos
-
+    ./clan
   ];
 }

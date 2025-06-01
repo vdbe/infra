@@ -11,6 +11,11 @@
     clan.inputs.systems.follows = "systems";
     clan.inputs.flake-parts.follows = "flake-parts";
 
+    mypkgs.url = "github:vdbe/flake-pkgs";
+    # mypkgs.url = "git+file:///home/user/dev/flake-pkgs";
+    mypkgs.inputs.nixpkgs.follows = "nixpkgs";
+    mypkgs.inputs.flake-compat.follows = "";
+
     preservation.url = "github:nix-community/preservation";
 
     flake-parts.url = "github:hercules-ci/flake-parts";

@@ -103,6 +103,27 @@
         "type": "github"
       }
     },
+    "mypkgs": {
+      "inputs": {
+        "flake-compat": [],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1748787688,
+        "narHash": "sha256-/m6Ss4Swvbk9VJ8+8S7CaqJjIMd8n78mNxcSJsTGmaA=",
+        "owner": "vdbe",
+        "repo": "flake-pkgs",
+        "rev": "5ae78f1a1c6de1fb0dceccefdb52086d6154ed10",
+        "type": "github"
+      },
+      "original": {
+        "owner": "vdbe",
+        "repo": "flake-pkgs",
+        "type": "github"
+      }
+    },
     "nix-darwin": {
       "inputs": {
         "nixpkgs": [
@@ -184,6 +205,7 @@
       "inputs": {
         "clan": "clan",
         "flake-parts": "flake-parts",
+        "mypkgs": "mypkgs",
         "nixpkgs": "nixpkgs",
         "preservation": "preservation",
         "systems": "systems"
