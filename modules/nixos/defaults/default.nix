@@ -14,6 +14,7 @@ in
       # For self.nixosModules
       ./args.nix
       ./clan.nix
+      ./firewall.nix
       ./nix.nix
     ]
     ++ (
