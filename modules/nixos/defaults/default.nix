@@ -30,6 +30,13 @@ in
         [ ]
     );
 
+  options = {
+    foo = lib.mkOption {
+      type = lib.types.anything;
+      description = "Debug option";
+    };
+  };
+
   config = {
     assertions = optional (etcOverlay.enable && !etcOverlay.mutable) {
       assertion = config.environment.etc."machine-id".enable or false;

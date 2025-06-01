@@ -16,6 +16,21 @@
         roles = [ "blockFromLAN" ];
       };
     };
+    # Proxy to a python http server to test everyting
+    nginx = {
+      enable = true;
+      reverseProxies = {
+        "test.home.arpa" = {
+          addresses = "127.0.0.1:8000";
+          protocol = "http";
+          virtualHostOptions = {
+            locations."/" = {
+              proxyWebsockets = true;
+            };
+          };
+        };
+      };
+    };
   };
 
   users = {

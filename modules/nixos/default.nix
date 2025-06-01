@@ -4,6 +4,7 @@ let
   scopes = [
     ./custom
     ./defaults
+    ./mixins
     ./profiles
   ];
   allModules = gatherModules scopes;
@@ -13,6 +14,7 @@ let
       imports = [
         ./custom
         ./defaults
+        ./mixins
       ];
     };
   };
