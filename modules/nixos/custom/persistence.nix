@@ -1,4 +1,5 @@
 {
+  self,
   inputs,
   lib,
   config,
@@ -12,6 +13,7 @@ let
   inherit (lib.attrsets) filterAttrs;
   inherit (lib.modules) mkDefault mkIf;
   inherit (lib.options) mkOption;
+  inherit (self.lib.helpers) mkPreserveData mkPreserveState;
 
   inherit (config.users) users;
 
@@ -71,33 +73,20 @@ in
   config = mkIf cfg.enable {
     preservation = {
       enable = mkDefault true;
-      preserveAt = {
-        "${cfg.path}/users" = {
-          directories = map (user: {
-            directory = users.${user}.home;
-            inherit user;
-            inherit (users.${user}) group;
-            configureParent = true;
+      preserveAt =
+        {
+          "${cfg.path}/users" = {
+            directories = map (user: {
+              directory = users.${user}.home;
+              inherit user;
+              inherit (users.${user}) group;
+              configureParent = true;
 
-          }) cfg.users;
-        };
-        "${cfg.path}/data" = {
-          directories = [
-            {
-              directory = "/var/log";
-              configureParent = true;
-            }
-          ];
-        };
-        "${cfg.path}/state" = {
-          directories = [
-            {
-              directory = "/var/lib/systemd/timesync";
-              configureParent = true;
-            }
-          ];
-        };
-      };
+            }) cfg.users;
+          };
+        }
+        // (mkPreserveData config "/var/log")
+        // (mkPreserveState config "/var/lib/systemd/timesync");
     };
 
     # Link sops dir

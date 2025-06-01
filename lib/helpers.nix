@@ -2,6 +2,7 @@
 let
   inherit (builtins)
     map
+    isList
     isAttrs
     listToAttrs
     replaceStrings
@@ -11,6 +12,7 @@ let
     throw
     ;
 
+  inherit (lib.modules) mkDefault;
   inherit (lib.lists) flatten;
 
   gatherModules =
@@ -64,8 +66,40 @@ let
     in
     listToAttrs (map toPair paths);
 
+  mkPreserve =
+    preserveAt: paths:
+    let
+      paths' = if isList paths then paths else [ paths ];
+    in
+    {
+      "${preserveAt}" = {
+        directories = map (
+          path:
+          let
+            # TODO: implement a way to also preserve files.
+            attrs = if isAttrs path then path else { directory = path; };
+          in
+          {
+            configureParent = mkDefault true;
+          }
+          // attrs
+        ) paths';
+      };
+    };
+
+  mkPreserveData = config: mkPreserve "${config.ewood.persistence.path}/data";
+  mkPreserveState = config: mkPreserve "${config.ewood.persistence.path}/state";
+  mkPreserveCache = config: mkPreserve "${config.ewood.persistence.path}/cache";
+
 in
 
 {
-  inherit gatherModules exposeModules;
+  inherit
+    gatherModules
+    exposeModules
+    mkPreserve
+    mkPreserveData
+    mkPreserveState
+    mkPreserveCache
+    ;
 }
