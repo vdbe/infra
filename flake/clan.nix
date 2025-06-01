@@ -16,6 +16,7 @@
           tags = [
             "server"
             "wifi"
+            "acme"
           ];
         };
       };
@@ -38,9 +39,7 @@
 
       instances = {
         "sshd" = {
-          module = {
-            name = "sshd";
-          };
+          module.name = "sshd";
           roles."server" = {
             settings =
               let
@@ -68,6 +67,13 @@
             settings = {
               networks."home".enable = true;
             };
+          };
+        };
+
+        "acme" = {
+          module.name = "acme";
+          roles."client" = {
+            tags."acme" = { };
           };
         };
       };

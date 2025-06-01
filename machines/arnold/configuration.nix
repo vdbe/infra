@@ -20,10 +20,16 @@
     nginx = {
       enable = true;
       reverseProxies = {
-        "test.home.arpa" = {
+        "test.ewood.dev" = {
           addresses = "127.0.0.1:8000";
           protocol = "http";
           virtualHostOptions = {
+            enableACME = true;
+            acmeRoot = null;
+
+            addSSL = true;
+            # forceSSL = true;
+
             locations."/" = {
               proxyWebsockets = true;
             };

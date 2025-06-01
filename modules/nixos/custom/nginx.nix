@@ -141,7 +141,6 @@ in
     };
 
     security = {
-      acme.acceptTerms = true;
       dhparams = {
         enable = mkDefault true;
         params.nginx = { };

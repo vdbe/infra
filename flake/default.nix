@@ -5,4 +5,10 @@
     ./devshells.nix
     ./formatter.nix
   ];
+
+  flake = {
+    infra = {
+      domain = "ewood.dev";
+    };
+  };
 }
