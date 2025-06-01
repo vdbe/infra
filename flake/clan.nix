@@ -12,10 +12,22 @@
 
     inventory = {
       machines = {
-        arnold = { };
+        arnold = {
+          tags = [ "server" ];
+        };
       };
 
       services = {
+        importer = {
+          "base".roles.default = {
+            tags = [ "all" ];
+            extraModules = [ self.nixosModules.default ];
+          };
+          "server".roles.default = {
+            tags = [ "server" ];
+            extraModules = [ self.nixosModules.profiles-server ];
+          };
+        };
         sshd."default" = {
           roles.server.tags = [ "all" ];
         };

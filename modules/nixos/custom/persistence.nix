@@ -55,7 +55,7 @@ in
       '';
     };
     users = mkOption {
-      type = types.listOf types.string;
+      type = types.listOf types.str;
       default =
         let
           normalUsers = filterAttrs (_: user: user.isNormalUser) users;

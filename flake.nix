@@ -16,6 +16,9 @@
     mypkgs.inputs.nixpkgs.follows = "nixpkgs";
     mypkgs.inputs.flake-compat.follows = "";
 
+    srvos.url = "github:nix-community/srvos";
+    srvos.inputs.nixpkgs.follows = "nixpkgs";
+
     preservation.url = "github:nix-community/preservation";
 
     flake-parts.url = "github:hercules-ci/flake-parts";

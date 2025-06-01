@@ -1,14 +1,37 @@
-_:
+{ lib, ... }:
 let
   inherit (builtins)
+    map
+    isAttrs
     listToAttrs
     replaceStrings
+    isFunction
     stringLength
     substring
+    throw
     ;
-in
 
-{
+  inherit (lib.lists) flatten;
+
+  gatherModules =
+    scopes:
+    scopes
+    ++ (flatten (
+      map (
+        scope:
+        let
+          scope' = import scope;
+          imports =
+            if (isAttrs scope') then
+              scope'.imports
+            else if (isFunction scope') then
+              (scope' { }).imports
+            else
+              throw "Invalid module structure for ${scope}";
+        in
+        imports
+      ) scopes
+    ));
 
   # TODO: Documentation
   exposeModules =
@@ -40,4 +63,9 @@ in
       };
     in
     listToAttrs (map toPair paths);
+
+in
+
+{
+  inherit gatherModules exposeModules;
 }

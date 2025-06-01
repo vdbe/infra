@@ -1,29 +1,14 @@
-{ self, lib, ... }:
+{ self, ... }:
 let
+  inherit (self.lib.helpers) exposeModules gatherModules;
   scopes = [
     ./custom
     ./defaults
+    ./profiles
   ];
-  all =
-    scopes
-    ++ (lib.flatten (
-      builtins.map (
-        scope:
-        let
-          scope' = import scope;
-          imports =
-            if (builtins.isAttrs scope') then
-              scope'.imports
-            else if (builtins.isFunction scope') then
-              (scope' { }).imports
-            else
-              builtins.throw "Invalid module structure for ${scope}";
-        in
-        imports
-      ) scopes
-    ));
+  allModules = gatherModules scopes;
 
-  nixosModules = (self.lib.helpers.exposeModules ./. all) // {
+  nixosModules = (exposeModules ./. allModules) // {
     default = {
       imports = [
         ./custom

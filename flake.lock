@@ -208,6 +208,7 @@
         "mypkgs": "mypkgs",
         "nixpkgs": "nixpkgs",
         "preservation": "preservation",
+        "srvos": "srvos",
         "systems": "systems"
       }
     },
@@ -229,6 +230,26 @@
       "original": {
         "owner": "Mic92",
         "repo": "sops-nix",
+        "type": "github"
+      }
+    },
+    "srvos": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1748481086,
+        "narHash": "sha256-rQ5hUgMThLFQsCB4urDeVAT1xjHuDN41bMH9u3WmhA8=",
+        "owner": "nix-community",
+        "repo": "srvos",
+        "rev": "917442c10abd63809917bb97dfd5292c02c672eb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "srvos",
         "type": "github"
       }
     },
