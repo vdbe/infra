@@ -24,6 +24,19 @@
             ...
           }:
           {
+            assertions = [
+              {
+                # Can't check this inside clan.core.vars.generators since it
+                # will start evaluting parts of the nixos configuration leading
+                # to errors from missing files (which need to be generated) or
+                # infinite recusion
+                assertion = config.security.acme.certs != { };
+                message = ''
+                  acme clan module enabled without acme certs!
+                  This will crash sops-nix because the acme user is missing
+                '';
+              }
+            ];
             security.acme = {
               acceptTerms = true;
               defaults = {
@@ -45,23 +58,19 @@
             };
 
             clan.core.vars.generators = {
-              # NOTE: Bad practice to evaluate outside of clan.core for generators
-              acme-cloudflare = lib.modules.mkIf (config.security.acme.certs != { }) {
+              acme-cloudflare = {
                 files = {
                   api_email = {
                     owner = "acme";
                     group = "acme";
-                    # group = "nginx";
                   };
                   dns_api_token = {
                     owner = "acme";
                     group = "acme";
-                    # group = "nginx";
                   };
                   zone_api_token = {
                     owner = "acme";
                     group = "acme";
-                    # group = "nginx";
                   };
                 };
                 prompts = {

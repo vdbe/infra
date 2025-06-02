@@ -13,7 +13,7 @@ let
       pathlen ? 1,
       keyUsage ? "critical,keyCertSign,cRLSign",
       days ? 3650,
-      subj ? "/CN=/C=/ST=/L=/O=",
+      subj ? "",
     }:
     {
       inherit share;
@@ -58,7 +58,7 @@ let
           -addext "subjectKeyIdentifier=hash" \
           -key "$out/key" \
           -sha256 \
-          -days ${toString days} \
+          -days "${toString days}" \
           -out "$out/cert" \
           -subj "${subj}"
 
@@ -126,20 +126,21 @@ let
         # Generate CSR (Certificate Signing Request)
         openssl req -new \
             -key "$out/key" \
-            -out cert \
+            -out cert.csr \
             -subj "${subj}"
 
         # Sign CSR with signer CA
         openssl x509 -req \
           -in cert.csr \
-          -CA "$in"/${signer}/cert \
-          -CAkey "$in"/${signer}/key \
+          -CA "$in/${signer}/cert" \
+          -CAkey "$in/${signer}/key" \
           -sha256 \
-          -days ${toString days} \
-          -out "$out/cert " \
+          -days "${toString days}" \
+          -out "$out/cert" \
           -extfile <(cat <<EOF
         ${extfile}
-        EOF)
+        EOF
+        )
 
         # Chains are ordered from leaf to root
         # Chain is all intermediate certificates (no root, no leaf)
