@@ -91,7 +91,9 @@ in
       }
     ];
 
-    warnings = optional lcfg.enable "custom-firewall imported and configure but firewall is not actived.";
+    warnings = optional (
+      !lcfg.enable
+    ) "custom-firewall imported and configured but firewall is not actived.";
 
     networking = {
       firewall.interfaces = firewallInterfaces;

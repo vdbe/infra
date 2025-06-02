@@ -129,7 +129,6 @@ in
             '';
           };
         };
-        # };
       } // (lib.mapAttrs (lib.const (lib.getAttr "virtualHostOptions")) cfg.reverseProxies);
     };
 
