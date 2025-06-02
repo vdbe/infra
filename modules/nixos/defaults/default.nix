@@ -1,10 +1,16 @@
 args:
 let
-  inherit (args) config lib clan-core;
+  inherit (args)
+    config
+    lib
+    clan-core
+    self
+    ;
 
   inherit (lib.modules) mkDefault;
   inherit (lib.lists) optional;
   inherit (clan-core) clanModules;
+  inherit (self) nixosModules;
 
   etcOverlay = config.system.etc.overlay;
 in
@@ -24,7 +30,12 @@ in
 
           # Always usefull in emergencies
           clanModules.root-password
+
+          # Keep same machine-id on reinstalls
           clanModules.machine-id
+
+          nixosModules.custom-persistence
+          nixosModules.custom-perlless
         ]
       else
         [ ]
@@ -51,6 +62,8 @@ in
     zramSwap.enable = mkDefault true;
 
     security.sudo.wheelNeedsPassword = mkDefault false;
+
+    users.mutableUsers = mkDefault false;
 
     # See https://github.com/NixOS/nixpkgs/issues/383179
     # Should be fixed on a next systemd version: https://github.com/NixOS/nixpkgs/issues/383179#issuecomment-2729028492

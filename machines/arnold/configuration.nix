@@ -5,15 +5,24 @@
   ...
 }:
 {
+  imports = [
+    self.nixosModules.custom-firewall
+    self.nixosModules.custom-nginx
+  ];
+
   ewood = {
     # Perl is required for the wifi clan service
     perlless.forbidPerl = false;
     firewall.interfaces = {
-      "end0" = {
-        roles = [ "blockFromLAN" ];
-      };
-      "wlan0" = {
-        roles = [ "blockFromLAN" ];
+      "lan" = {
+        name = [
+          "end0"
+          "wlan0"
+        ];
+        blockFromLAN.enable = true;
+        allowedTCPPorts = [
+          443
+        ];
       };
     };
     # Proxy to a python http server to test everyting

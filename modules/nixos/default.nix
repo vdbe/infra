@@ -7,14 +7,15 @@ let
     ./mixins
     ./profiles
   ];
-  allModules = gatherModules scopes;
+  allModules = exposeModules ./. (gatherModules scopes);
 
-  nixosModules = (exposeModules ./. allModules) // {
+  nixosModules = allModules // {
     default = {
       imports = [
-        ./custom
-        ./defaults
-        ./mixins
+        allModules.defaults
+        allModules.mixins
+
+        # allModules.custom
       ];
     };
   };

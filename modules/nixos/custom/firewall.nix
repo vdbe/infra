@@ -1,75 +1,136 @@
-{ config, lib, ... }:
+{
+  options,
+  config,
+  lib,
+  ...
+}:
 let
-  roles = [
-    "blockFromLAN"
-  ];
+  inherit (builtins)
+    getAttr
+    attrValues
+    concatStringsSep
+    removeAttrs
+    listToAttrs
+    ;
+  inherit (lib) types;
+  inherit (lib.options) mkOption;
+  inherit (lib.attrsets) filterAttrs nameValuePair;
+  inherit (lib.trivial) const;
+  inherit (lib.lists) flatten optional;
+  inherit (lib.modules) mkIf;
 
-  interfaceNames =
-    role: builtins.attrNames (lib.filterAttrs (n: v: builtins.elem role v.roles) cfg.interfaces);
-
-  interfaceSubModule =
+  interfaceSubmodule =
     { name, ... }:
     {
       options = {
-        ifname = lib.mkOption {
-          type = lib.types.str;
-          default = name;
+        name = mkOption {
+          type = types.coercedTo types.str (s: [ s ]) (types.listOf types.str);
+          default = [ name ];
+          description = "Interface names";
+          defaultText = "Name of the attribute.";
         };
 
-        # TODO: Document roles
-        roles = lib.mkOption {
-          type = lib.types.listOf (lib.types.enum roles);
-          default = [ ];
+        blockFromLAN = {
+          enable = mkOption {
+            type = types.bool;
+            default = false;
+            description = ''
+              Block system from accessing any LAN device through this interfaces.
+              A LAN device is with an ip (v4/v6) in the private range.
+            '';
+          };
         };
+
+        # Common options from nixos.firewall.interfaces.<name>.
+        inherit (options.networking.firewall)
+          allowedUDPPorts
+          allowedUDPPortRanges
+          allowedTCPPorts
+          allowedTCPPortRanges
+          ;
       };
-      config = { };
     };
+
+  getInterfaces =
+    role: filterAttrs (const (interface: interface.${role}.enable or false)) cfg.interfaces;
+  getInterfaceNames = interfaces: flatten (map (getAttr "name") (attrValues interfaces));
+
+  cleanCustomInterface =
+    interface:
+    removeAttrs interface [
+      "name"
+      "blockFromLAN"
+    ];
+  customInterFaceToInterfaces =
+    customInterface:
+    let
+      interface = cleanCustomInterface customInterface;
+    in
+    (map (name: nameValuePair name interface)) customInterface.name;
+  firewallInterfaces = listToAttrs (
+    flatten (map customInterFaceToInterfaces (attrValues cfg.interfaces))
+  );
+
   cfg = config.ewood.firewall;
+  lcfg = config.networking.firewall;
 in
 {
 
   options.ewood.firewall = {
     interfaces = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.submodule interfaceSubModule);
+      type = lib.types.attrsOf (lib.types.submodule interfaceSubmodule);
       default = { };
     };
   };
 
-  config = {
-    networking.nftables.tables = {
-      "block-from-lan" =
-        let
-          interfaces = interfaceNames "blockFromLAN";
-        in
-        lib.mkIf (interfaces != [ ]) {
-          family = "inet";
-          content = ''
-            set ifnames {
-              type ifname
-              elements = {${builtins.concatStringsSep ", " interfaces}}
-            }
+  config = mkIf (cfg.interfaces != { }) {
+    assertions = [
+      {
+        assertion = lcfg.enable && config.networking.nftables.enable;
+        message = "custom-firwall depends on nftables, please enable nftables";
+      }
+    ];
 
-            chain forward {
-              type filter hook output priority filter;
+    warnings = optional lcfg.enable "custom-firewall imported and configure but firewall is not actived.";
 
-              # enable flow offloading for better throughput
-              # ip protocol { tcp, udp } flow offload @f
+    networking = {
+      firewall.interfaces = firewallInterfaces;
+      nftables.tables = {
+        "block-from-lan" =
+          let
+            interfaces = getInterfaces "blockFromLAN";
+            interfaceNames = getInterfaceNames interfaces;
+          in
+          mkIf (interfaceNames != [ ]) {
+            family = "inet";
+            content = ''
+              set ifnames {
+                type ifname
+                elements = {${concatStringsSep ", " interfaceNames}}
+              }
 
-              # Allow established/related connections
-              ct state related,established accept
+              chain forward {
+                type filter hook output priority filter;
 
-              # Drop packets with private IP addresses (RFC 1918) going to WAN from any interface
-              oifname @ifnames ip daddr {
-                10.0.0.0/8,
-                172.16.0.0/12,
-                192.168.0.0/16
-              } drop comment "Block private IPv4 ranges from WAN"
+                # enable flow offloading for better throughput
+                # ip protocol { tcp, udp } flow offload @f
 
-              # Drop IPv6 ULA (Unique Local Address) range going to WAN from any interface
-              oifname @ifnames ip6 daddr fc00::/7 drop comment "Block private IPv6 ranges from WAN"
-            }
-          '';
-        };
+                # Allow established/related connections
+                ct state related,established accept
+
+                # Drop packets with private IP addresses (RFC 1918) going to WAN from any interface
+                oifname @ifnames ip daddr {
+                  10.0.0.0/8,
+                  172.16.0.0/12,
+                  192.168.0.0/16
+                } drop comment "Block private IPv4 ranges from WAN"
+
+                # Drop IPv6 ULA (Unique Local Address) range going to WAN from any interface
+                oifname @ifnames ip6 daddr fc00::/7 drop comment "Block private IPv6 ranges from WAN"
+              }
+            '';
+          };
+      };
     };
   };
 }
