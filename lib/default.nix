@@ -7,6 +7,7 @@
 let
   clanLib = lib.fixedPoints.makeExtensible (final: {
     helpers = import ./helpers.nix { inherit lib; };
+    generators = import ./generators.nix { inherit lib; };
 
     # we have to rexport the functions we want to use, but don't want to refer to the whole lib
     # "path". e.g. gardenLib.hardware.isx86Linux can be shortened to gardenLib.isx86Linux

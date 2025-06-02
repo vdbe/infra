@@ -36,6 +36,7 @@ in
 
           nixosModules.custom-persistence
           nixosModules.custom-perlless
+          nixosModules.custom-root-ca
         ]
       else
         [ ]
