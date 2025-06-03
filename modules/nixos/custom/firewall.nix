@@ -6,7 +6,7 @@
 }:
 let
   inherit (builtins)
-    getAttr
+    catAttrs
     attrValues
     concatStringsSep
     removeAttrs
@@ -53,7 +53,7 @@ let
 
   getInterfaces =
     role: filterAttrs (const (interface: interface.${role}.enable or false)) cfg.interfaces;
-  getInterfaceNames = interfaces: flatten (map (getAttr "name") (attrValues interfaces));
+  getInterfaceNames = interfaces: flatten (catAttrs "name" (attrValues interfaces));
 
   cleanCustomInterface =
     interface:

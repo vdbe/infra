@@ -10,10 +10,13 @@ let
     stringLength
     substring
     throw
+    foldl'
     ;
 
   inherit (lib.modules) mkDefault;
   inherit (lib.lists) flatten;
+  inherit (lib.attrsets) optionalAttrs;
+  inherit (lib.trivial) mergeAttrs;
 
   gatherModules =
     scopes:
@@ -91,6 +94,13 @@ let
   mkPreserveState = config: mkPreserve "${config.ewood.persistence.path}/state";
   mkPreserveCache = config: mkPreserve "${config.ewood.persistence.path}/cache";
 
+  # Opposite of builtins.keepAttrs
+  keepAttrs =
+    names: attrs:
+    foldl' mergeAttrs { } (
+      map (name: optionalAttrs (attrs ? ${name}) { ${name} = attrs.${name}; }) names
+    );
+
 in
 
 {
@@ -101,5 +111,6 @@ in
     mkPreserveData
     mkPreserveState
     mkPreserveCache
+    keepAttrs
     ;
 }

@@ -11,7 +11,7 @@ let
   inherit (builtins) attrNames map;
   inherit (lib) types;
   inherit (lib.attrsets) filterAttrs;
-  inherit (lib.modules) mkDefault mkIf;
+  inherit (lib.modules) mkDefault mkIf mkMerge;
   inherit (lib.options) mkOption;
   inherit (self.lib.helpers) mkPreserveData mkPreserveState;
 
@@ -70,67 +70,83 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    preservation = {
-      enable = mkDefault true;
-      preserveAt =
-        {
-          "${cfg.path}/users" = {
-            directories = map (user: {
-              directory = users.${user}.home;
-              inherit user;
-              inherit (users.${user}) group;
-              configureParent = true;
+  config = mkMerge [
+    (mkIf cfg.enable {
+      preservation = {
+        enable = mkDefault true;
+        preserveAt =
+          {
+            "${cfg.path}/users" = {
+              directories = map (user: {
+                directory = users.${user}.home;
+                inherit user;
+                inherit (users.${user}) group;
+                configureParent = true;
 
-            }) cfg.users;
-          };
-        }
-        // (mkPreserveData config "/var/log")
-        // (mkPreserveState config "/var/lib/systemd/timesync");
-    };
-
-    # Link sops dir
-    # Needs to happen earlier then normal persistance services.
-    #
-    # Based on:
-    #   - https://github.com/Mic92/sops-nix/blob/8d215e1c981be3aa37e47aeabd4e61bb069548fd/modules/sops/default.nix
-    #   - https://github.com/Mic92/sops-nix/blob/8d215e1c981be3aa37e47aeabd4e61bb069548fd/modules/sops/secrets-for-users/default.nix
-    systemd.services = {
-      link-sops-dir = lib.mkIf (sopsSystemdInstallSecrets || sopsSystemdInstallSecretsForUsers) {
-        wantedBy =
-          (lib.optional sopsSystemdInstallSecrets "sops-install-secrets.service")
-          ++ (lib.optional sopsSystemdInstallSecretsForUsers "sops-install-secrets-for-users.service");
-        before =
-          (lib.optional sopsSystemdInstallSecrets "sops-install-secrets.service")
-          ++ (lib.optional sopsSystemdInstallSecretsForUsers "sops-install-secrets-for-users.service");
-        unitConfig.DefaultDependencies = "no";
-
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = pkgs.writeShellScript "link-sops-nix-dir" ''
-            mkdir -p /var/lib
-            rm -rf /var/lib/sops-nix
-            ln -sfn "${persistentSopsPath}"  -t /var/lib
-          '';
-        };
+              }) cfg.users;
+            };
+          }
+          // (mkPreserveData config "/var/log")
+          // (mkPreserveState config "/var/lib/systemd/timesync");
       };
-    };
 
-    system.activationScripts =
-      mkIf (sopsActivationScriptssetupSecrets || sopsActivationScriptsSetupSecretsForUsers)
-        {
-          linkSopsDir = {
-            # Run after /dev has been mounted
-            deps = [ "specialfs" ];
-            text = ''
-              # Needed by sops setupSecrets/setupSecretsForUsers
-              [ -e /run/current-system ] || echo setting up keys...
+      # Link sops dir
+      # Needs to happen earlier then normal persistance services.
+      #
+      # Based on:
+      #   - https://github.com/Mic92/sops-nix/blob/8d215e1c981be3aa37e47aeabd4e61bb069548fd/modules/sops/default.nix
+      #   - https://github.com/Mic92/sops-nix/blob/8d215e1c981be3aa37e47aeabd4e61bb069548fd/modules/sops/secrets-for-users/default.nix
+      systemd.services = {
+        link-sops-dir = lib.mkIf (sopsSystemdInstallSecrets || sopsSystemdInstallSecretsForUsers) {
+          wantedBy =
+            (lib.optional sopsSystemdInstallSecrets "sops-install-secrets.service")
+            ++ (lib.optional sopsSystemdInstallSecretsForUsers "sops-install-secrets-for-users.service");
+          before =
+            (lib.optional sopsSystemdInstallSecrets "sops-install-secrets.service")
+            ++ (lib.optional sopsSystemdInstallSecretsForUsers "sops-install-secrets-for-users.service");
+          unitConfig.DefaultDependencies = "no";
+
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = pkgs.writeShellScript "link-sops-nix-dir" ''
+              mkdir -p /var/lib
               rm -rf /var/lib/sops-nix
-              ln -sfn ${persistentSopsPath} -t /var/lib
+              ln -sfn "${persistentSopsPath}"  -t /var/lib
             '';
           };
-          setupSecrets.deps = mkIf sopsActivationScriptssetupSecrets [ "linkSopsDir" ];
-          setupSecretsForUsers.deps = mkIf sopsActivationScriptsSetupSecretsForUsers [ "linkSopsDir" ];
         };
-  };
+      };
+
+      system.activationScripts =
+        mkIf (sopsActivationScriptssetupSecrets || sopsActivationScriptsSetupSecretsForUsers)
+          {
+            linkSopsDir = {
+              # Run after /dev has been mounted
+              deps = [ "specialfs" ];
+              text = ''
+                # Needed by sops setupSecrets/setupSecretsForUsers
+                [ -e /run/current-system ] || echo setting up keys...
+                rm -rf /var/lib/sops-nix
+                ln -sfn ${persistentSopsPath} -t /var/lib
+              '';
+            };
+            setupSecrets.deps = mkIf sopsActivationScriptssetupSecrets [ "linkSopsDir" ];
+            setupSecretsForUsers.deps = mkIf sopsActivationScriptsSetupSecretsForUsers [ "linkSopsDir" ];
+          };
+    })
+
+    (mkIf (config.preservation.enable && config.services.userborn.enable) {
+      # NOTE: Doesn't seem like userborn has an initrd service
+      # boot.initrd.systemd = {
+      #   targets.initrd-preservation = {
+      #   };
+      # };
+      systemd.targets = {
+        preservation = {
+          after = [ "userborn.service" ];
+        };
+      };
+
+    })
+  ];
 }

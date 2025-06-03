@@ -5,13 +5,15 @@
 # we can then use that elsewhere like our hosts
 { lib, ... }:
 let
-  clanLib = lib.fixedPoints.makeExtensible (final: {
+  myLib = lib.fixedPoints.makeExtensible (final: {
+    templates = import ./templates.nix;
     helpers = import ./helpers.nix { inherit lib; };
-    generators = import ./generators.nix { inherit lib; };
+    generators = import ./generators.nix { inherit myLib lib; };
 
     # we have to rexport the functions we want to use, but don't want to refer to the whole lib
     # "path". e.g. gardenLib.hardware.isx86Linux can be shortened to gardenLib.isx86Linux
     # NOTE: never rexport templates
+    inherit (final.helpers) keepAttrs;
   });
 
   # I want to absorb the evergarden lib into the garden lib. We don't do this
@@ -23,7 +25,7 @@ let
 
   # we need to extend gardenLib with the nixpkgs lib to get the full set of functions
   # if we do it the otherway around we will get errors saying mkMerge and so on don't exist
-  finalLib = clanLib.extend ext;
+  finalLib = myLib.extend ext;
 in
 {
   # expose our custom lib to the flake

@@ -1,5 +1,15 @@
-{ lib, ... }:
+{ myLib, lib, ... }:
 let
+  inherit (builtins)
+    toString
+    mapAttrs
+    concatStringsSep
+    attrValues
+    ;
+  inherit (lib.strings) concatLines;
+  inherit (lib.lists) optional;
+  inherit (myLib) keepAttrs;
+
   mkRootCA =
     pkgs:
     {
@@ -8,6 +18,7 @@ let
       deploy ? !share,
       owner ? "root",
       group ? owner,
+      restartUnits ? [ ],
 
       # CA options
       pathlen ? 1,
@@ -19,17 +30,25 @@ let
       inherit share;
       files = {
         "key" = {
-          inherit owner group deploy;
+          inherit
+            owner
+            group
+            deploy
+            restartUnits
+            ;
         };
         "cert" = {
+          inherit restartUnits;
           deploy = false;
           secret = false;
         };
         "chain" = {
+          inherit restartUnits;
           deploy = false;
           secret = false;
         };
         "fullchain" = {
+          inherit restartUnits;
           deploy = false;
           secret = false;
         };
@@ -77,6 +96,7 @@ let
       deploy ? !share,
       owner ? "root",
       group ? owner,
+      restartUnits ? [ ],
 
       # CA options
       subj ? "",
@@ -90,17 +110,25 @@ let
       inherit share;
       files = {
         "key" = {
-          inherit owner group deploy;
+          inherit
+            owner
+            group
+            deploy
+            restartUnits
+            ;
         };
         "cert" = {
+          inherit restartUnits;
           deploy = false;
           secret = false;
         };
         "chain" = {
+          inherit restartUnits;
           deploy = false;
           secret = false;
         };
         "fullchain" = {
+          inherit restartUnits;
           deploy = false;
           secret = false;
         };
@@ -150,7 +178,61 @@ let
       '';
     };
 
+  mkPasswords =
+    pkgs: passwords:
+    let
+      defaultPasswordSettings = {
+        length = 64;
+
+        secure = true;
+
+        capitalize = true;
+        numerals = true;
+        symbols = true;
+      };
+      passwordToCommand =
+        name: settings:
+        let
+          s = defaultPasswordSettings // settings;
+        in
+        concatStringsSep " " (
+          [
+            "pwgen"
+            "-1"
+          ]
+          ++ (optional s.capitalize "--capitalize")
+          ++ (optional s.numerals "--numerals")
+          ++ (optional s.symbols "--symbols")
+          ++ (optional s.secure "--secure")
+          ++ [
+            (toString s.length)
+            "> \"$out/${name}\""
+          ]
+        );
+
+      # Copied from: https://git.clan.lol/clan/clan-core/src/commit/fde68877547f3de4b8ce83ee4ff232d4f1718313/nixosModules/clanCore/vars/interface.nix#L169-L326
+      fileAttributeNames = [
+        "name"
+        "generatorName"
+        "share"
+        "deploy"
+        "secret"
+        "neededFor"
+        "owner"
+        "group"
+        "mode"
+        "restartUnits"
+      ];
+    in
+    {
+      files = mapAttrs (_: keepAttrs fileAttributeNames) passwords;
+      script = concatLines (attrValues (mapAttrs passwordToCommand passwords));
+      runtimeInputs = [
+        pkgs.pwgen
+      ];
+    };
+
 in
 {
-  inherit mkRootCA mkSignedCert;
+  inherit mkRootCA mkSignedCert mkPasswords;
 }
