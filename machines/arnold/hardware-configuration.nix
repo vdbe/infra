@@ -11,7 +11,6 @@
 
   # Don't bloat the system with uneeded tools
   disabledModules = [
-    /har
     "${toString modulesPath}/profiles/base.nix"
   ];
   boot.supportedFilesystems.zfs = false;

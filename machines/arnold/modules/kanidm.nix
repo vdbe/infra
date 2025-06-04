@@ -99,8 +99,8 @@ in
           export KANIDM_TOKEN_CACHE_PATH=/run/kanidm-setup-commands/kanidm_tokens
 
           ${kanidm} login
-        ''
-        ++ (concatLines (map (command: "${kanidm} ${command}") extraKanidmCommands));
+          ${concatLines (map (command: "${kanidm} ${command}") extraKanidmCommands)}
+        '';
 
       RestrictAddressFamilies = [
         "AF_UNIX"
@@ -120,8 +120,8 @@ in
     in
     {
       "kanidm-passwords" = self.lib.generators.mkPasswords pkgs {
-        "idm-admin" = commonOptions;
-        "admin" = commonOptions;
+        "idm-admin".file = commonOptions;
+        "admin".file = commonOptions;
       };
       "kanidm-server-cert" = self.lib.generators.mkSignedCert pkgs {
         signer = "root-ca";

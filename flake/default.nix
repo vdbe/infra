@@ -1,3 +1,4 @@
+{ inputs, ... }:
 {
   imports = [
     ./checks.nix
@@ -10,5 +11,6 @@
     infra = {
       domain = "ewood.dev";
     };
+    inherit inputs;
   };
 }

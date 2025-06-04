@@ -20,7 +20,6 @@
         nixosModule =
           {
             config,
-            lib,
             ...
           }:
           {
@@ -47,57 +46,44 @@
                 enableDebugLogs = true;
                 credentialFiles =
                   let
-                    inherit (config.clan.core.vars.generators."acme-cloudflare") files;
+                    getFilePath = file: config.clan.core.vars.generators."acme-cloudflare".files.${file}.path;
                   in
                   {
-                    "CF_API_EMAIL_FILE" = files."api_email".path;
-                    "CF_DNS_API_TOKEN_FILE" = files."dns_api_token".path;
-                    "CF_ZONE_API_TOKEN_FILE" = files."zone_api_token".path;
+                    "CF_API_EMAIL_FILE" = getFilePath "api_email";
+                    "CF_DNS_API_TOKEN_FILE" = getFilePath "dns_api_token";
+                    "CF_ZONE_API_TOKEN_FILE" = getFilePath "zone_api_token";
                   };
               };
             };
 
             clan.core.vars.generators = {
-              acme-cloudflare = {
-                files = {
-                  api_email = {
-                    owner = "acme";
-                    group = "acme";
+              acme-cloudflare =
+                let
+                  mkPrompt = type: description: {
+                    file = {
+                      owner = "acme";
+                      group = "acme";
+                    };
+                    prompt = {
+                      inherit type description;
+                    };
                   };
-                  dns_api_token = {
-                    owner = "acme";
-                    group = "acme";
-                  };
-                  zone_api_token = {
-                    owner = "acme";
-                    group = "acme";
-                  };
+
+                in
+                self.lib.generators.mkPrompts {
+                  "api_email" = mkPrompt "line" "Email used for cloudflare login";
+                  "dns_api_token" = mkPrompt "hidden" ''
+                    - Zone -> Dns -> Edit
+                    - Include -> Specific Zone -> `SECRET_DOMAIN`
+                    - DNS:Edit permission
+                  '';
+                  "zone_api_token" = mkPrompt "hidden" ''
+                    - Zone -> Zone -> Read
+                    - Include -> Specific Zone -> `SECRET_DOMAIN`
+                    - Zone:Read permission
+                  '';
+
                 };
-                prompts = {
-                  api_email = {
-                    persist = true;
-                    description = "email used for cloudflare login";
-                  };
-                  dns_api_token = {
-                    type = "hidden";
-                    persist = true;
-                    description = ''
-                      - Zone -> Dns -> Edit
-                      - Include -> Specific Zone -> `SECRET_DOMAIN`
-                      - DNS:Edit permission
-                    '';
-                  };
-                  zone_api_token = {
-                    type = "hidden";
-                    persist = true;
-                    description = ''
-                      - Zone -> Zone -> Read
-                      - Include -> Specific Zone -> `SECRET_DOMAIN`
-                      - Zone:Read permission
-                    '';
-                  };
-                };
-              };
             };
           };
       };

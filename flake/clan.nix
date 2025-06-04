@@ -1,4 +1,7 @@
 { self, inputs, ... }:
+let
+  inherit (self.infra) domain;
+in
 {
   imports = [
     inputs.clan.flakeModules.default
@@ -17,6 +20,7 @@
             "server"
             "wifi"
             "acme"
+            "tunnel"
           ];
         };
       };
@@ -74,6 +78,24 @@
           module.name = "acme";
           roles."client" = {
             tags."acme" = { };
+          };
+        };
+        "tunnel" = {
+          module.name = "cloudflare-tunnel";
+          roles."default" = {
+            tags."tunnel" = { };
+            machines."arnold".settings = {
+              tunnel_id = "78b6bc34-6ed3-407a-9587-e2f700b24f98";
+              ingress = {
+                "idm.${domain}" = { };
+                "test123.${domain}" = {
+                  origin_request = {
+                    http_host_header = "idm.${domain}";
+                    origin_server_name = "idm.${domain}";
+                  };
+                };
+              };
+            };
           };
         };
       };

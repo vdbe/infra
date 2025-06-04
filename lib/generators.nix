@@ -3,12 +3,18 @@ let
   inherit (builtins)
     toString
     mapAttrs
+    getAttr
     concatStringsSep
     attrValues
+    hasAttr
+    catAttrs
     ;
   inherit (lib.strings) concatLines;
-  inherit (lib.lists) optional;
+  inherit (lib.lists) optional flatten;
   inherit (myLib) keepAttrs;
+  inherit (lib.attrsets) filterAttrs;
+  inherit (lib.modules) mkIf;
+  inherit (lib.trivial) const;
 
   mkRootCA =
     pkgs:
@@ -210,29 +216,50 @@ let
           ]
         );
 
-      # Copied from: https://git.clan.lol/clan/clan-core/src/commit/fde68877547f3de4b8ce83ee4ff232d4f1718313/nixosModules/clanCore/vars/interface.nix#L169-L326
-      fileAttributeNames = [
-        "name"
-        "generatorName"
-        "share"
-        "deploy"
-        "secret"
-        "neededFor"
-        "owner"
-        "group"
-        "mode"
-        "restartUnits"
-      ];
     in
     {
-      files = mapAttrs (_: keepAttrs fileAttributeNames) passwords;
+      files = mapAttrs (const (attrs: (attrs.file or { }))) passwords;
       script = concatLines (attrValues (mapAttrs passwordToCommand passwords));
       runtimeInputs = [
         pkgs.pwgen
       ];
     };
 
+  mkPrompts =
+    prompts:
+    let
+      prompts' = mapAttrs (
+        name: attrs: (attrs.prompt or { }) // { persist = (!(attrs ? commandIfEmpty)); }
+      ) prompts;
+
+      # promptToScript = name: settings: ''
+      #   prompt_value="$(cat "$prompts/${name}"")"
+      #   if [[ -n "''${prompt_value-}" ]]; then
+      #     cp "$prompts/${name}" "$out/${name}"
+      #   else
+      #     ${settings.commandIfEmpty} > "$out/${name}"
+      #   fi
+      # '';
+      promptToScript = name: settings: "a";
+
+      promptScripts = mapAttrs promptToScript (filterAttrs (const (hasAttr "commandIfEmpty")) prompts);
+      runtimeInputs = flatten (catAttrs "runtimeInputs" (attrValues prompts));
+
+    in
+    {
+      files = mapAttrs (const (attrs: (attrs.file or { }))) prompts;
+      prompts = prompts';
+      inherit runtimeInputs;
+
+      script = concatLines (attrValues promptScripts);
+    };
+
 in
 {
-  inherit mkRootCA mkSignedCert mkPasswords;
+  inherit
+    mkRootCA
+    mkSignedCert
+    mkPasswords
+    mkPrompts
+    ;
 }
