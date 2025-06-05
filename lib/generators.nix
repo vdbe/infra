@@ -1,9 +1,8 @@
-{ myLib, lib, ... }:
+{ lib, ... }:
 let
   inherit (builtins)
     toString
     mapAttrs
-    getAttr
     concatStringsSep
     attrValues
     hasAttr
@@ -11,9 +10,7 @@ let
     ;
   inherit (lib.strings) concatLines;
   inherit (lib.lists) optional flatten;
-  inherit (myLib) keepAttrs;
   inherit (lib.attrsets) filterAttrs;
-  inherit (lib.modules) mkIf;
   inherit (lib.trivial) const;
 
   mkRootCA =
@@ -212,6 +209,7 @@ let
           ++ (optional s.secure "--secure")
           ++ [
             (toString s.length)
+            "| tr -d '\n'"
             "> \"$out/${name}\""
           ]
         );

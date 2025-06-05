@@ -22,6 +22,7 @@ in
       ./clan.nix
       ./firewall.nix
       ./nix.nix
+      ./generators.nix
     ]
     ++ (
       if (args ? clan-core) then

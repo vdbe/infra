@@ -13,7 +13,7 @@ let
 
   extraKanidmCommands = [
     "person validity expire-at '1970-01-01T00:00:00+00:00'"
-    "group add-member idm_admins vdbe"
+    "group add-members idm_admins vdbe"
   ];
 
   enableServer = true;
@@ -44,7 +44,6 @@ in
       domain = "idm.${domain}";
       origin = "https://idm.${domain}";
       tls_chain = "/etc/kanidm/chain.pem";
-      # tls_chain = generators."kanidm-server-cert".files."fullchain".path;
       tls_key = generators."kanidm-server-cert".files."key".path;
     };
 
@@ -52,15 +51,6 @@ in
       enable = true;
       adminPasswordFile = generators."kanidm-passwords".files."admin".path;
       idmAdminPasswordFile = generators."kanidm-passwords".files."idm-admin".path;
-
-      persons = {
-        "vdbe" = {
-          displayName = "vdbe";
-          legalName = "vdbe";
-          mailAddresses = [ "vdbe@${domain}" ];
-        };
-
-      };
 
     };
   };

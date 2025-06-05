@@ -35,8 +35,10 @@
 
       perSystem =
         {
+          self',
           pkgs,
           system,
+          lib,
           ...
         }:
         {
@@ -44,13 +46,13 @@
             inherit system;
             config.allowUnfree = true;
           };
-          # packages = {
-          #   opentofu = pkgs.opentofu.withPlugins (
-          #     plugins: with plugins; [
-          #       cloudflare
-          #     ]
-          #   );
-          # };
+          packages = {
+            import-terraform = pkgs.writeShellApplication {
+              name = "import-terraform";
+              runtimeInputs = [ pkgs.jq ];
+              text = builtins.readFile ./import.bash;
+            };
+          };
 
           # terraformConfiguration = terranix.lib.terranixConfiguration {
           #   inherit system pkgs;
@@ -77,11 +79,12 @@
                     in
                     ''
                       # Load in terraform key file
-
                       function load_key_file() {
                         KEY_FILE="$(realpath ${keyFile'})"
+                        touch "$KEY_FILE";
+                        chmod 600 "$KEY_FILE"
 
-                        echo "Loading $KEY_FILE"
+                        echo "[+] Loading $KEY_FILE"
                         KEY_FILE="$(realpath ${keyFile'})"
 
                         sops decrypt "${encryptedKeyFile}" --output "$KEY_FILE"
@@ -91,15 +94,16 @@
 
                       function cleanup_key_file() {
                         rm -f "$KEY_FILE"
-                        echo "Removing $KEY_FILE"
+                        echo "[+] Removing $KEY_FILE"
                       }
 
-                      if [ "$1" = "apply" ]; then
+                      if [[ "$1" == "apply" ]]; then
                         trap cleanup_key_file EXIT
                         load_key_file
                         export SOPS_AGE_KEY_FILE
-                      fi
 
+                        ${lib.getExe self'.packages.import-terraform}
+                      fi
                     '';
                 };
 

@@ -1,5 +1,3 @@
-# Can't provision tunnel with terraform since the uuid is required to import `cloudflare_zero_trust_tunnel_cloudflared`
-# and I want to be able to apply without a .tfstate present
 { ... }:
 let
 in
@@ -64,6 +62,7 @@ in
       in
       {
         options = {
+          # Can maybe remove this once is fixed and release https://github.com/cloudflare/terraform-provider-cloudflare/issues/5524
           tunnel_id = lib.options.mkOption {
             type = types.str;
             description = "TunnelID filed in credentials files";
@@ -97,20 +96,51 @@ in
       };
 
     perInstance =
-      { settings, ... }:
+      { machine, ... }:
       {
         nixosModule =
           {
+            self,
             config,
+            lib,
+            pkgs,
             ...
           }:
           {
-            services.cloudflared = {
-              enable = true;
-              tunnels = {
-                "${settings.tunnel_id}" = {
-                  credentialsFile = config.clan.core.vars.generators."cloudflared".files."credentials".path;
-                  default = "http_status:404";
+            # We don't use the nixos.services module since it doesn't allow authenticatian via token
+            systemd = {
+              targets = {
+                cloudflared-tunnel = {
+                  requires = [ "cloudflared-tunnel.service" ];
+                  after = [ "cloudflared-tunnel.service" ];
+                  unitConfig.StopWhenUnneeded = true;
+                };
+              };
+
+              services = {
+                cloudflared-tunnel = {
+                  after = [
+                    "network.target"
+                    "network-online.target"
+                  ];
+                  wants = [
+                    "network.target"
+                    "network-online.target"
+                  ];
+                  wantedBy = [ "multi-user.target" ];
+                  serviceConfig = self.lib.templates.systemd.serviceConfig // {
+                    DynamicUser = true;
+                    Environment = "TUNNEL_TOKEN_FILE=%d/TUNNEL_TOKEN";
+                    LoadCredential = "TUNNEL_TOKEN:${
+                      config.clan.core.vars.generators."cloudflared".files."tunnel-token".path
+                    }";
+                    ExecStart = "${lib.getExe pkgs.cloudflared} tunnel run";
+                    RestrictAddressFamilies = [
+                      # "AF_UNIX"
+                      "AF_INET"
+                      "AF_INET6"
+                    ];
+                  };
                 };
               };
             };
@@ -118,25 +148,19 @@ in
             clan.core.vars.generators = {
               "cloudflared" = {
                 files = {
-                  "credentials" = {
-                    restartUnits = [ "cloudflared-tunnel-${settings.tunnel_id}.service" ];
+                  "tunnel-token" = {
+                    restartUnits = [ "cloudflared-tunnel.service" ];
                   };
                 };
                 prompts = {
-                  "credentials" = {
+                  "tunnel-token" = {
                     persist = true;
                     type = "hidden";
                     description = ''
-                      The file in ~/.cloudflared/<tunnel id>.json in ~/.cloudflared,
-                      created by `cloudflared tunnel create <tunnel name>`.
+                      `cloudflared tunnel token infra-${machine.name}`
                     '';
                   };
                 };
-
-                script = ''
-                  cat $prompts/credentials
-
-                '';
               };
             };
           };
@@ -149,12 +173,6 @@ in
         "cloudflare" = {
           share = true;
           files = {
-            "account-id" = {
-              deploy = false;
-            };
-            "zone-id" = {
-              deploy = false;
-            };
             "api-token" = {
               deploy = false;
             };
@@ -171,5 +189,4 @@ in
       };
     };
   };
-
 }

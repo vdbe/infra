@@ -10,7 +10,7 @@
     self.nixosModules.custom-firewall
     self.nixosModules.custom-nginx
 
-    ./modules/kanidm.nix
+    ./modules/kanidm
   ];
 
   ewood = {

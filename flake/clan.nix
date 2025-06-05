@@ -85,10 +85,16 @@ in
           roles."default" = {
             tags."tunnel" = { };
             machines."arnold".settings = {
-              tunnel_id = "78b6bc34-6ed3-407a-9587-e2f700b24f98";
+              tunnel_id = "be3bb077-8fb7-4948-b014-2791e6185ff5";
               ingress = {
                 "idm.${domain}" = { };
                 "test123.${domain}" = {
+                  origin_request = {
+                    http_host_header = "idm.${domain}";
+                    origin_server_name = "idm.${domain}";
+                  };
+                };
+                "testabc.${domain}" = {
                   origin_request = {
                     http_host_header = "idm.${domain}";
                     origin_server_name = "idm.${domain}";
