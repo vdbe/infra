@@ -3,8 +3,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-SOPS_AGE_KEY_FILE="./key.txt"
-export SOPS_AGE_KEY_FILE
+# SOPS_AGE_KEY_FILE="./key.txt"
+# export SOPS_AGE_KEY_FILE
 
 tf_console() {
   echo "$1" | terraform console

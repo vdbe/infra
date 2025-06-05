@@ -68,7 +68,6 @@
                       inherit type description;
                     };
                   };
-
                 in
                 self.lib.generators.mkPrompts {
                   "api_email" = mkPrompt "line" "Email used for cloudflare login";

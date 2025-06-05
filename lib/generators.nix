@@ -230,15 +230,14 @@ let
         name: attrs: (attrs.prompt or { }) // { persist = (!(attrs ? commandIfEmpty)); }
       ) prompts;
 
-      # promptToScript = name: settings: ''
-      #   prompt_value="$(cat "$prompts/${name}"")"
-      #   if [[ -n "''${prompt_value-}" ]]; then
-      #     cp "$prompts/${name}" "$out/${name}"
-      #   else
-      #     ${settings.commandIfEmpty} > "$out/${name}"
-      #   fi
-      # '';
-      promptToScript = name: settings: "a";
+      promptToScript = name: settings: ''
+        prompt_value="$(cat "$prompts/${name}"")"
+        if [[ -n "''${prompt_value-}" ]]; then
+          cp "$prompts/${name}" "$out/${name}"
+        else
+          ${settings.commandIfEmpty} > "$out/${name}"
+        fi
+      '';
 
       promptScripts = mapAttrs promptToScript (filterAttrs (const (hasAttr "commandIfEmpty")) prompts);
       runtimeInputs = flatten (catAttrs "runtimeInputs" (attrValues prompts));
