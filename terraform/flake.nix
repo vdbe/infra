@@ -116,6 +116,7 @@
 
                   ./sops.nix
                   ./cloudflare
+                  ./tailscale
                 ];
               };
             };
