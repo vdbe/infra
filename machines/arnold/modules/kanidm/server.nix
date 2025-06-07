@@ -55,48 +55,55 @@ in
     };
   };
 
-  systemd.services."kanidm-setup-commands" = mkIf (extraKanidmCommands != [ ]) {
-    wantedBy = [ "kanidm.service" ];
-    after = [ "kanidm.service" ];
-    preStart = ''
-      ${lib.getExe pkgs.curlMinimal} --silent \
-        --cacert ${generators."root-ca".files."cert".path} \
-        $KANIDM_URL/status
-    '';
+  systemd.services = {
+    "kanidm" = {
+      # Otherwise secrets could be missing due to race conditions
+      after = [ "sops-install-secrets.service" ];
+    };
 
-    serviceConfig = self.lib.templates.systemd.serviceConfig // {
-      # serviceConfig = {
-      Type = "oneshot";
-      DynamicUser = true;
-      LoadCredential = "KANIDM_PASSWORD_FILE:${generators."kanidm-passwords".files."idm-admin".path}";
-      RuntimeDirectory = "kanidm-setup-commands";
-      Environment = [
-        "KANIDM_DEBUG=false"
-        "KANIDM_PASSWORD_FILE=/run/credentials/%N.service/KANIDM_PASSWORD_FILE"
-        "KANIDM_NAME=idm_admin"
-        "KANIDM_TOKEN_CACHE_PATH=/run/%N/kanidm_tokens"
-        "KANIDM_URL=https://${cfg.serverSettings.bindaddress}"
-        "HOME=/run/%N"
-      ];
-      ReadWritePaths = [ "/run/%N" ];
-      ExecStart =
-        let
-          # NOTE: this copies everything including server
-          kanidm = "${pkgs.kanidm}/bin/kanidm";
-        in
-        pkgs.writeShellScript "extra-kanidm-setup-commands" ''
-          export KANIDM_PASSWORD="$(cat "$KANIDM_PASSWORD_FILE")"
-          export KANIDM_TOKEN_CACHE_PATH=/run/kanidm-setup-commands/kanidm_tokens
+    "kanidm-setup-commands" = mkIf (extraKanidmCommands != [ ]) {
+      wantedBy = [ "kanidm.service" ];
+      after = [ "kanidm.service" ];
+      preStart = ''
+        ${lib.getExe pkgs.curlMinimal} --silent \
+          --cacert ${generators."root-ca".files."cert".path} \
+          $KANIDM_URL/status
+      '';
 
-          ${kanidm} login
-          ${concatLines (map (command: "${kanidm} ${command}") extraKanidmCommands)}
-        '';
+      serviceConfig = self.lib.templates.systemd.serviceConfig // {
+        # serviceConfig = {
+        Type = "oneshot";
+        DynamicUser = true;
+        LoadCredential = "KANIDM_PASSWORD_FILE:${generators."kanidm-passwords".files."idm-admin".path}";
+        RuntimeDirectory = "kanidm-setup-commands";
+        Environment = [
+          "KANIDM_DEBUG=false"
+          "KANIDM_PASSWORD_FILE=/run/credentials/%N.service/KANIDM_PASSWORD_FILE"
+          "KANIDM_NAME=idm_admin"
+          "KANIDM_TOKEN_CACHE_PATH=/run/%N/kanidm_tokens"
+          "KANIDM_URL=https://${cfg.serverSettings.bindaddress}"
+          "HOME=/run/%N"
+        ];
+        ReadWritePaths = [ "/run/%N" ];
+        ExecStart =
+          let
+            # NOTE: this copies everything including server
+            kanidm = "${pkgs.kanidm}/bin/kanidm";
+          in
+          pkgs.writeShellScript "extra-kanidm-setup-commands" ''
+            export KANIDM_PASSWORD="$(cat "$KANIDM_PASSWORD_FILE")"
+            export KANIDM_TOKEN_CACHE_PATH=/run/kanidm-setup-commands/kanidm_tokens
 
-      RestrictAddressFamilies = [
-        "AF_UNIX"
-        "AF_INET"
-        "AF_INET6"
-      ];
+            ${kanidm} login
+            ${concatLines (map (command: "${kanidm} ${command}") extraKanidmCommands)}
+          '';
+
+        RestrictAddressFamilies = [
+          # "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+        ];
+      };
     };
   };
 

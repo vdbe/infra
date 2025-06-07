@@ -18,6 +18,7 @@ in
 
         groups = [
           "cf-zero-trust.access"
+          "grafana.server-admins"
         ];
       };
     };

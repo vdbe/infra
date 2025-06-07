@@ -5,10 +5,14 @@
   lib,
   ...
 }:
+let
+  inherit (self.infra) domain;
+in
 {
   imports = [
     self.nixosModules.custom-firewall
     self.nixosModules.custom-nginx
+    self.nixosModules.custom-grafana
 
     ./modules/kanidm
   ];
@@ -16,7 +20,21 @@
   ewood = {
     # Perl is required for the wifi clan service
     perlless.forbidPerl = false;
-    nginx.enable = true;
+    grafana.enable = true;
+    nginx = {
+      enable = true;
+      reverseProxies = {
+        "grafana.${domain}" = {
+          addresses = "unix:${config.services.grafana.settings.server.socket}";
+          protocol = "http";
+          virtualHostOptions = {
+            enableACME = true;
+            acmeRoot = null;
+            forceSSL = true;
+          };
+        };
+      };
+    };
     firewall.interfaces = {
       "lan" = {
         name = [
@@ -41,6 +59,9 @@
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       '';
+    };
+    grafana = {
+      settings.server.root_url = "https://grafana.${domain}";
     };
   };
 
