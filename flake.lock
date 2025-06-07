@@ -20,11 +20,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1749211792,
-        "narHash": "sha256-14v/DTws5oGx02NIbpNeULZ1gkDGzWynu0QbK+7Nv0c=",
-        "rev": "5c0f192a777ec2c67803c53b289ad0eded0f1d12",
+        "lastModified": 1749250965,
+        "narHash": "sha256-9lJbgIFAhTzHKClpl+6b9d+qXISzipAh+tUcTlvoC64=",
+        "rev": "7358a4c7372d718854dce0bd7ef0d312bbe612f8",
         "type": "tarball",
-        "url": "https://git.clan.lol/api/v1/repos/clan/clan-core/archive/5c0f192a777ec2c67803c53b289ad0eded0f1d12.tar.gz"
+        "url": "https://git.clan.lol/api/v1/repos/clan/clan-core/archive/7358a4c7372d718854dce0bd7ef0d312bbe612f8.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -175,11 +175,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1749008870,
-        "narHash": "sha256-5QEAcgawS2tOJrLr+U5DtzlShSCEpeg7PZDC7txvLQs=",
-        "rev": "c2a03962b8e24e669fb37b7df10e7c79531ff1a4",
+        "lastModified": 1749238035,
+        "narHash": "sha256-+w+VydE8NSQXu8RSNLhn0fVMaEoFPgUbNYa8m1rewuM=",
+        "rev": "d3d2d80a2191a73d1e86456a751b83aa13085d7d",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable/nixos-25.11pre810143.c2a03962b8e2/nixexprs.tar.xz"
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-25.11pre811203.d3d2d80a2191/nixexprs.tar.xz"
       },
       "original": {
         "type": "tarball",

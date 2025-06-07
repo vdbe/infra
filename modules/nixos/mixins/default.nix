@@ -5,5 +5,6 @@
     ./grafana.nix
     ./kanidm.nix
     ./postgresql.nix
+    ./tailscale.nix
   ];
 }

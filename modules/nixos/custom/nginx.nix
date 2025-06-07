@@ -98,7 +98,6 @@ in
   };
 
   config = {
-    foo = reverseProxies;
     services.nginx = {
       enable = mkDefault true;
       statusPage = mkIf cfg.statusPage (mkDefault true);

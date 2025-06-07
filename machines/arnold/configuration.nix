@@ -15,6 +15,7 @@ in
     self.nixosModules.custom-grafana
 
     ./modules/kanidm
+    ./modules/coredns.nix
   ];
 
   ewood = {

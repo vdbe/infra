@@ -15,7 +15,7 @@ in
     inputs.srvos.nixosModules.server
   ];
 
-  options.mymodules.profiles.server = {
+  options.ewood.profiles.server = {
     enable = mkEnableOption "server profile" // {
       default = true;
       readOnly = true;

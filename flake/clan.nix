@@ -16,32 +16,58 @@ in
     inventory = {
       machines = {
         arnold = {
+          deploy.targetHost = "arnold.tailscale.${domain}";
           tags = [
             "server"
             "wifi"
             "acme"
             "tunnel"
+            "tailscale"
           ];
         };
       };
 
       services = {
-        importer = {
-          "base".roles.default = {
-            tags = [ "all" ];
-            extraModules = [ self.nixosModules.default ];
-          };
-          "server".roles.default = {
-            tags = [ "server" ];
-            extraModules = [ self.nixosModules.profiles-server ];
-          };
-        };
         sshd."default" = {
           roles.server.tags = [ "all" ];
         };
       };
 
       instances = {
+        "base" = {
+          module = {
+            name = "importer";
+            input = "clan";
+          };
+          roles.default = {
+            tags."all" = { };
+            extraModules = [ self.nixosModules.default ];
+          };
+        };
+        "server" = {
+          module = {
+            name = "importer";
+            input = "clan";
+          };
+          roles.default = {
+            tags."server" = { };
+            extraModules = [ self.nixosModules.profiles-server ];
+          };
+        };
+        "tailsale" = {
+          module = {
+            name = "importer";
+            input = "clan";
+          };
+          roles.default = {
+            tags."tailscale" = { };
+            extraModules = [
+              {
+                services.tailscale.enable = true;
+              }
+            ];
+          };
+        };
         "sshd" = {
           module.name = "sshd";
           roles."server" = {
@@ -61,6 +87,7 @@ in
             tags."all" = { };
           };
         };
+
         "wifi" = {
           module = {
             name = "wifi";
@@ -80,6 +107,7 @@ in
             tags."acme" = { };
           };
         };
+
         "tunnel" = {
           module.name = "cloudflare-tunnel";
           roles."default" = {
@@ -88,18 +116,6 @@ in
               tunnel_id = "be3bb077-8fb7-4948-b014-2791e6185ff5";
               ingress = {
                 "idm.${domain}" = { };
-                "test123.${domain}" = {
-                  origin_request = {
-                    http_host_header = "idm.${domain}";
-                    origin_server_name = "idm.${domain}";
-                  };
-                };
-                "testabc.${domain}" = {
-                  origin_request = {
-                    http_host_header = "idm.${domain}";
-                    origin_server_name = "idm.${domain}";
-                  };
-                };
               };
             };
           };

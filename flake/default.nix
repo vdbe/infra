@@ -10,6 +10,7 @@
   flake = {
     infra = {
       domain = "ewood.dev";
+      tailnet = "tail71527.ts.net";
     };
     inherit inputs;
   };
