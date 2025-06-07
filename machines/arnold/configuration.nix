@@ -23,16 +23,11 @@ in
     grafana.enable = true;
     nginx = {
       enable = true;
-      reverseProxies = {
-        "grafana.${domain}" = {
-          addresses = "unix:${config.services.grafana.settings.server.socket}";
-          protocol = "http";
-          virtualHostOptions = {
-            enableACME = true;
-            acmeRoot = null;
-            forceSSL = true;
-          };
-        };
+      domain = domain;
+      commonVirtualHostOptions = {
+        enableACME = true;
+        acmeRoot = null;
+        forceSSL = true;
       };
     };
     firewall.interfaces = {
@@ -60,9 +55,9 @@ in
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       '';
     };
-    grafana = {
-      settings.server.root_url = "https://grafana.${domain}";
-    };
+    # grafana = {
+    #   # settings.server.root_url = "https://grafana.${domain}";
+    # };
   };
 
   users = {

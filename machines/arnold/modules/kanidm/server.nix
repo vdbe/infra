@@ -20,14 +20,12 @@ let
   cfg = config.services.kanidm;
 in
 {
-  ewood.nginx.reverseProxies = {
-    ${cfg.serverSettings.domain} = mkIf cfg.enableServer {
-      addresses = cfg.serverSettings.bindaddress;
-      protocol = "https";
-      virtualHostOptions = {
-        enableACME = true;
-        acmeRoot = null;
-        forceSSL = true;
+  ewood.nginx = {
+    enable = true;
+    reverseProxies = {
+      ${cfg.serverSettings.domain} = mkIf cfg.enableServer {
+        addresses = cfg.serverSettings.bindaddress;
+        protocol = "https";
       };
     };
   };

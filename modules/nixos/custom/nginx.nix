@@ -8,14 +8,24 @@ let
   inherit (lib) types;
   inherit (lib.options) mkOption mkEnableOption;
   inherit (lib.modules) mkDefault mkIf;
-  inherit (lib.strings) optionalString;
-  inherit (lib.attrsets) filterAttrs nameValuePair;
+  inherit (lib.strings) optionalString hasSuffix;
+  inherit (lib.attrsets)
+    filterAttrs
+    nameValuePair
+    mapAttrs'
+    recursiveUpdate
+    ;
+  inherit (lib.trivial) const;
 
   # Inspired by https://github.com/getchoo/borealis/blob/44d41d8f0dfa9e2d76aed7fa4c1b87b1b1af0276/modules/nixos/custom/proxies.nix
   reverseProxySubmodule =
     { config, name, ... }:
     {
       options = {
+        domain = mkOption {
+          type = types.str;
+          description = "Address to proxy.";
+        };
         addresses = mkOption {
           type = types.nullOr (types.coercedTo types.str (s: [ s ]) (types.listOf types.str));
           default = null;
@@ -40,27 +50,44 @@ let
       config = {
         virtualHostOptions = {
           locations."/" = {
-            proxyPass = mkIf (config.addresses != null) (mkDefault "${config.protocol}://${name}");
+            proxyPass = mkIf (config.addresses != null) (mkDefault "${config.protocol}://${config.domain}");
           };
         };
-
+        domain =
+          if (cfg.domain == null || hasSuffix cfg.domain name) then name else "${name}.${cfg.domain}";
       };
     };
 
+  commonOptions = {
+    virtualHostOptions = cfg.commonVirtualHostOptions;
+  };
+  reverseProxies = mapAttrs' (const (
+    attrs: nameValuePair attrs.domain (recursiveUpdate commonOptions attrs)
+  )) cfg.reverseProxies;
+
   reverseProxiesUpstreams = mapAttrs (_: settings: {
     servers = listToAttrs (map (address: nameValuePair address { }) settings.addresses);
-  }) (filterAttrs (_: settings: settings.addresses != null) cfg.reverseProxies);
+  }) (filterAttrs (_: settings: settings.addresses != null) reverseProxies);
 
   cfg = config.ewood.nginx;
 in
 {
   options.ewood.nginx = {
     enable = mkEnableOption "nginx";
+    domain = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "Default domain to use";
+    };
     statusPage = (mkEnableOption "status page") // {
       default = true;
     };
     accessLogToJournal = (mkEnableOption "Send access logs to the journal") // {
       default = true;
+    };
+    commonVirtualHostOptions = mkOption {
+      type = types.attrsOf types.anything;
+      default = { };
     };
     reverseProxies = mkOption {
       type = types.attrsOf (types.submodule reverseProxySubmodule);
@@ -71,6 +98,7 @@ in
   };
 
   config = {
+    foo = reverseProxies;
     services.nginx = {
       enable = mkDefault true;
       statusPage = mkIf cfg.statusPage (mkDefault true);
@@ -129,7 +157,7 @@ in
             '';
           };
         };
-      } // (lib.mapAttrs (lib.const (lib.getAttr "virtualHostOptions")) cfg.reverseProxies);
+      } // (lib.mapAttrs (lib.const (lib.getAttr "virtualHostOptions")) reverseProxies);
     };
 
     systemd.services.nginx = {
