@@ -123,4 +123,8 @@ in
       };
     };
   };
+
+  flake = {
+    inherit (self.clanInternals) inventory;
+  };
 }

@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ self, lib, ... }:
 let
   inherit (builtins)
     map
@@ -11,12 +11,50 @@ let
     substring
     throw
     foldl'
+    getAttr
+    mapAttrs
     ;
 
-  inherit (lib.modules) mkDefault;
+  inherit (lib.modules) mkDefault evalModules;
   inherit (lib.lists) flatten;
   inherit (lib.attrsets) optionalAttrs;
-  inherit (lib.trivial) mergeAttrs;
+  inherit (lib.trivial) mergeAttrs const;
+
+  clanLib = self.clanInternals.clanLib;
+  inventory = self.clanInternals.inventory;
+  inherit (self) inputs;
+
+  importedModuleWithInstances =
+    (clanLib.inventory.mapInstances {
+      flakeInputs = inputs;
+      inherit inventory;
+      localModuleSet = self.clan.modules;
+    }).importedModuleWithInstances;
+
+  getMachinesSettings =
+    instance: role:
+    let
+      instance' = importedModuleWithInstances.${instance};
+
+      # Options
+      interface = instance'.resolvedModule.roles.${role}.interface;
+
+      # Config
+      settings = instance'.instanceRoles.${role};
+      defaultSettings = settings.settings;
+      machinesSettings = mapAttrs (const (getAttr "settings")) settings.machines;
+
+      evaluateMachineSettings =
+        machineSettings:
+        evalModules {
+          modules = [
+            interface
+            defaultSettings
+            machineSettings
+          ];
+        };
+    in
+    mapAttrs (const (settings: getAttr "config" (evaluateMachineSettings settings))) machinesSettings;
 
   gatherModules =
     scopes:
@@ -112,5 +150,6 @@ in
     mkPreserveState
     mkPreserveCache
     keepAttrs
+    getMachinesSettings
     ;
 }
