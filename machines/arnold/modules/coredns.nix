@@ -77,16 +77,17 @@ in
   services = {
     coredns = {
       package = pkgs.coredns.overrideAttrs (old: {
-        version = "git-vdbe";
+        version = "1.12.2";
         src = pkgs.fetchFromGitHub {
-          owner = "vdbe";
+          owner = "coredns";
           repo = "coredns";
-          rev = "873de9032df3bd47ecc5be0ac2af0b7b1aed0218";
+          rev = "0eb55420350647a788e96282d03978e8a782d478";
           # sha256 = pkgs.lib.fakeSha256;
-          sha256 = "sha256-uAaLpjd0U/NW1b3nUeCAA/FxE4NIM7AFOwynkCd/cbE=";
+          sha256 = "sha256-P4GhWrEACR1ZhNhGAoXWvNXYlpwnm2dz6Ggqv72zYog=";
         };
 
-        vendorHash = "sha256-f0KeZ6XAcjWB9wCAO3dbp307PmmAWgtbBkwpeEm6FOk=";
+        # vendorHash = "sha256-f0KeZ6XAcjWB9wCAO3dbp307PmmAWgtbBkwpeEm6FOk=";
+        vendorHash = "sha256-Es3xy8NVDo7Xgu32jJa4lhYWGa5hJnRyDKFYQqB3aBY=";
 
       });
       enable = true;

@@ -13,6 +13,7 @@ in
     self.nixosModules.custom-firewall
     self.nixosModules.custom-nginx
     self.nixosModules.custom-grafana
+    # self.nixosModules.custom-loki
 
     ./modules/kanidm
     ./modules/coredns.nix
@@ -38,6 +39,11 @@ in
           "wlan0"
         ];
         blockFromLAN.enable = true;
+        allowedTCPPorts = [
+          443
+        ];
+      };
+      "tailscale0" = {
         allowedTCPPorts = [
           443
         ];
