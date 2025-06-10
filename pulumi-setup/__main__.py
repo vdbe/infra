@@ -151,14 +151,14 @@ def cloudflare_setup(provider: CloudflareProvider, key_file: PathLike | None = N
     account_id = zone.account.id
     zone_id = zone.id
 
-    existing_dns_records = cloudflare.get_dns_records(
-        zone_id=zone_id,
-        opts=InvokeOptions(**opts),
-        comment={
-            #  Comments the poor mans tags
-            "contains": "managed-by:infra",
-        },
-    )
+    # existing_dns_records = cloudflare.get_dns_records(
+    #     zone_id=zone_id,
+    #     opts=InvokeOptions(**opts),
+    #     comment={
+    #         #  Comments the poor mans tags
+    #         # "contains": "managed-by:infra",
+    #     },
+    # )
     # Can't use this see: https://github.com/cloudflare/terraform-provider-cloudflare/issues/5524
     # existing_tunnels = cloudflare.get_zero_trust_tunnel_cloudflareds(account_id=account_id, opts=opts)
 
@@ -202,22 +202,23 @@ def cloudflare_setup(provider: CloudflareProvider, key_file: PathLike | None = N
         # Create dns records for the tunnel
         for ingress in ingresses[:-1]:
             hostname = ingress["hostname"]
+            print("setting up for ", hostname)
             if hostname == DOMAIN:
                 record = "@"
             else:
                 record = hostname.removesuffix(f".{DOMAIN}")
 
-            conflicting_record_types = ["CNAME", "A", "AAAA"]
-            existing_record = next(
-                (
-                    filter(
-                        lambda record: record.name == hostname
-                        and record.type in conflicting_record_types,
-                        existing_dns_records.results,
-                    )
-                ),
-                None,
-            )
+            # conflicting_record_types = ["CNAME", "A", "AAAA"]
+            # existing_record = next(
+            #     (
+            #         filter(
+            #             lambda record: record.name == hostname
+            #             and record.type in conflicting_record_types,
+            #             existing_dns_records.results,
+            #         )
+            #     ),
+            #     None,
+            # )
 
             record_name = f"dnsRecordResource{''.join(map(str.capitalize, record.split('.')))}CNAME"
             _dns_record = cloudflare.DnsRecord(
@@ -228,9 +229,9 @@ def cloudflare_setup(provider: CloudflareProvider, key_file: PathLike | None = N
                 comment=f"managed-by:infra machine:{name}",
                 proxied=True,
                 type="CNAME",
-                content=tunnel.id.apply(lambda id: f"{id}.cfcargotunnel.com"),
+                content=tunnel.id.apply(lambda id: f"{id}.cfargotunnel.com"),
                 opts=ResourceOptions(
-                    id=f"{zone_id}/{existing_record.id}" if existing_record else None,
+                    # id=f"{zone_id}/{existing_record.id}" if existing_record else None,
                     **opts,
                 ),
             )
@@ -239,24 +240,23 @@ def cloudflare_setup(provider: CloudflareProvider, key_file: PathLike | None = N
     pass
 
     # Setup generic oauth
-    existing_identity_providers = cloudflare.get_zero_trust_access_identity_providers(
-        # account_id = account_id,
-        zone_id=zone_id,
-        opts=InvokeOptions(**opts),
-    )
-    print(json.dumps(existing_identity_providers.results, indent=True))
-    existing_identity_provider = next(
-        filter(
-            lambda provider: provider.type == "oidc" and provider.name == "kanidm",
-            existing_identity_providers.results,
-        ),
-        None,
-    )
+    # existing_identity_providers = cloudflare.get_zero_trust_access_identity_providers(
+    #     # account_id = account_id,
+    #     zone_id=zone_id,
+    #     opts=InvokeOptions(**opts),
+    # )
+    # existing_identity_provider = next(
+    #     filter(
+    #         lambda provider: provider.type == "oidc" and provider.name == "kanidm",
+    #         existing_identity_providers.results,
+    #     ),
+    #     None,
+    # )
 
     client_id = "cloudflare-zero-trust"
     config = ZeroTrustAccessIdentityProviderConfigArgs(
         claims=[],
-        scopes=["openidemailprofile"],
+        scopes=["openid", "email", "profile"],
         client_id=client_id,
         client_secret=get_var(
             "kanidm-oauth2",
@@ -283,9 +283,9 @@ def cloudflare_setup(provider: CloudflareProvider, key_file: PathLike | None = N
         config=config,
         scim_config=scim_config,
         opts=ResourceOptions(
-            id=f"zones/{zone_id}/{existing_identity_provider.id}"
-            if existing_identity_provider
-            else None,
+            # id=f"zones/{zone_id}/{existing_identity_provider.id}"
+            # if existing_identity_provider
+            # else None,
             **opts,
         ),
     )
