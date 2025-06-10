@@ -116,6 +116,7 @@ in
               tunnel_id = "be3bb077-8fb7-4948-b014-2791e6185ff5";
               ingress = {
                 "idm.${domain}" = { };
+                "grafana.${domain}" = {};
               };
             };
           };

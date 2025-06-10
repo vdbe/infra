@@ -43,7 +43,7 @@ in
           443
         ];
       };
-      "tailscale0" = {
+      "${config.services.tailscale.interfaceName}" = {
         allowedTCPPorts = [
           443
         ];
@@ -60,11 +60,17 @@ in
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Up buffer sized since it errors otherwise
+        # NOTE: current sizes might be a bit overkill
+        proxy_busy_buffers_size   512k;
+        proxy_buffers   8 512k;
+        proxy_buffer_size   256k;
       '';
     };
-    # grafana = {
-    #   # settings.server.root_url = "https://grafana.${domain}";
-    # };
+    grafana = {
+      settings.server.root_url = lib.mkForce "https://grafana.${domain}";
+    };
   };
 
   users = {

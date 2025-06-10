@@ -119,6 +119,7 @@ in
               in
               mkIf (cfg.setupNginxReverseProxy && warning) {
                 domain = "grafana.${nginxDomain}";
+                root_url = "https://grafana.${nginxDomain}";
               }
             )
           ];
