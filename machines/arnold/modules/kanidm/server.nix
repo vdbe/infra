@@ -24,6 +24,7 @@ in
     enable = true;
     reverseProxies = {
       ${cfg.serverSettings.domain} = mkIf cfg.enableServer {
+        # TODO: mtls proxy -> kanidm
         addresses = cfg.serverSettings.bindaddress;
         protocol = "https";
       };

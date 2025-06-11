@@ -2,10 +2,11 @@
   imports = [
     ./firewall.nix
     ./grafana.nix
-    ./loki.nix
+    ./loki
     ./nginx.nix
     ./persistence.nix
     ./perlless.nix
+    ./prometheus.nix
     ./root-ca.nix
   ];
 }

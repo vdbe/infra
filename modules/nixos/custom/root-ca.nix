@@ -13,7 +13,6 @@ let
   cfg = config.ewood.root-ca;
 in
 {
-
   options.ewood.root-ca = {
     enable = mkOption {
       type = types.bool;

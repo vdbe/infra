@@ -60,6 +60,7 @@ let
 
     ${mkCNAME "grafana" "arnold"}
     ${mkCNAME "prometheus" "arnold"}
+    ${mkCNAME "loki" "arnold"}
     ${mkCNAME "idm" "arnold"}
   '';
 

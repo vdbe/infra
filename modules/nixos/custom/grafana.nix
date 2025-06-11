@@ -72,16 +72,22 @@ in
             "unix:${server.socket}"
           else
             "${server.http_addr}:${server.http_port}";
+
       in
       mkIf cfg.setupNginxReverseProxy {
         inherit addresses;
         protocol = if server.protocol == "https" then "https" else "http";
+        virtualHostOptions = {
+          locations."/" = {
+            proxyWebsockets = true;
+          };
+
+        };
       };
 
     services = {
       postgresql = {
         enable = mkDefault true;
-
         ensureDatabases = [
           "grafana"
         ];

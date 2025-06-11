@@ -105,19 +105,28 @@ in
       commonHttpConfig = optionalString cfg.accessLogToJournal ''
         # Custom log format that includes `$request_time`
         # See https://nginx.org/en/docs/http/ngx_http_log_module.html
-        log_format main '$remote_addr - $remote_user [$time_local] "$host" "$request" '
-          '$status $body_bytes_sent "$http_referer" '
-          '"$http_user_agent" $request_time';
+        # log_format main '$remote_addr - $remote_user [$time_local] "$host" "$request" '
+        #   '$status $body_bytes_sent "$http_referer" '
+        #   '"$http_user_agent" $request_time';
 
         # Send access logs to the journal
         # - using the log format `main`
         # - with the tag nginx_access to filter it from normal `nginx.service` logs
         #   `nohostname` is required for the tag to be recognized
         # You can filter on logs with `journalctl -t nginx_access`
-        access_log syslog:server=unix:/dev/log,nohostname,tag=nginx_access main;
+        # access_log syslog:server=unix:/dev/log,nohostname,tag=nginx_access main;
 
         # TODO: decide if I want error logs with a tag or default behaviour which is alread to the journal
         #error_log syslog:server=unix:/dev/log,nohostname,tag=nginx_error;
+        log_format main '$remote_addr - $remote_user [$time_local] "$host" "$request" '
+          '$status $body_bytes_sent "$http_referer" '
+          '"$http_user_agent" $request_time';
+        access_log syslog:server=unix:/dev/log,nohostname,tag=nginx_access main;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
       '';
 
       # Enable all recommendations
