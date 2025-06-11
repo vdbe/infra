@@ -258,6 +258,11 @@ in
 
           // TODO: geoip on remote_addr
 
+          stage.template {
+            source   = "level"
+            template = "{{ $status := (int .status) }}{{ if ge $status 500 }}error{{ else if ge $status 400 }}warn{{ else }}info{{ end }}"
+          }
+
           stage.labels {
             values = {
               remote_addr = "",
@@ -272,6 +277,7 @@ in
               // http_refer = "",
               // user_agent = "",
               // request_time = "",
+              level = "",
             }
           }
         }
