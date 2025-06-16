@@ -122,13 +122,19 @@ in
                   after = [
                     "network.target"
                     "network-online.target"
+                    "nss-lookup.target"
                   ];
                   wants = [
                     "network.target"
                     "network-online.target"
+                    "nss-lookup.target"
                   ];
                   wantedBy = [ "multi-user.target" ];
                   serviceConfig = self.lib.templates.systemd.serviceConfig // {
+                    # Fails because network-online and nss-lookup targets don't mean you can resolve to an upstreams dns
+                    Restart = "on-failure";
+                    RestartSec = "5";
+
                     DynamicUser = true;
                     Environment = "TUNNEL_TOKEN_FILE=%d/TUNNEL_TOKEN";
                     LoadCredential = "TUNNEL_TOKEN:${

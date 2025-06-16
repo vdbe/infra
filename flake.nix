@@ -4,7 +4,8 @@
   inputs = {
     systems.url = "github:nix-systems/default";
 
-    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
+    # nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
+    nixpkgs.url = "github:vdbe/nixpkgs/nixos-unstable";
 
     clan.url = "https://git.clan.lol/clan/clan-core/archive/main.tar.gz";
     clan.inputs.nixpkgs.follows = "nixpkgs";
@@ -15,6 +16,9 @@
     # mypkgs.url = "git+file:///home/user/dev/flake-pkgs";
     mypkgs.inputs.nixpkgs.follows = "nixpkgs";
     mypkgs.inputs.flake-compat.follows = "";
+
+    ngx-prometheus-exporter.url = "github:vdbe/ngx-prometheus-exporter";
+    ngx-prometheus-exporter.inputs.nixpkgs.follows = "nixpkgs";
 
     srvos.url = "github:nix-community/srvos";
     srvos.inputs.nixpkgs.follows = "nixpkgs";

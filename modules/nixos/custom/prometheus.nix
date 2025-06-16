@@ -76,9 +76,15 @@ in
                 if ($ssl_client_s_dn !~ "CN=alloy_client.*") {
                     return 403 "Access Denied: Only loki pushers are allowed to push logs.";
                 }
+
+                # Just to reduce the noise
+                if ($status = "204") {
+                    access_log off;
+                }
+                access_log off;
               '';
             };
-            "~ ^/api/v1/(query|label|status/buildinfo)" = {
+            "~ ^/api/v1/(query|label|rules|status/buildinfo)" = {
               priority = 150;
               proxyWebsockets = true;
               inherit proxyPass;

@@ -79,6 +79,12 @@ in
                 if ($ssl_client_s_dn !~ "CN=alloy_client.*") {
                     return 403 "Access Denied: Only Loki pushers are allowed to push logs.";
                 }
+
+                # Just to reduce the noise
+                # Can't check $status since it doesn't exist at this point
+                if ($request_method = "POST") {
+                    access_log off;
+                }
               '';
             };
 

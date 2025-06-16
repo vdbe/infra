@@ -1,6 +1,9 @@
 {
+  self,
+  inputs',
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -14,8 +17,14 @@ let
     nameValuePair
     mapAttrs'
     recursiveUpdate
+    getLib
     ;
   inherit (lib.trivial) const;
+
+  ngxPrometheusExporter = inputs'.ngx-prometheus-exporter.packages.default.override {
+    nginx = config.services.nginx.package;
+  };
+  ngxPrometheusExporterModule = "${getLib ngxPrometheusExporter}/lib/libngx_prometheus_exporter.so";
 
   # Inspired by https://github.com/getchoo/borealis/blob/44d41d8f0dfa9e2d76aed7fa4c1b87b1b1af0276/modules/nixos/custom/proxies.nix
   reverseProxySubmodule =
@@ -70,6 +79,7 @@ let
   }) (filterAttrs (_: settings: settings.addresses != null) reverseProxies);
 
   cfg = config.ewood.nginx;
+  lcfg = config.services.nginx;
 in
 {
   options.ewood.nginx = {
@@ -98,9 +108,21 @@ in
   };
 
   config = {
+    users.groups."nginx-socket" = {
+      gid = 60579; # https://systemd.io/UIDS-GIDS/#summary
+      members = [
+        config.services.nginx.user
+        "user"
+      ];
+    };
+
     services.nginx = {
       enable = mkDefault true;
       statusPage = mkIf cfg.statusPage (mkDefault true);
+
+      prependConfig = ''
+        load_module "${ngxPrometheusExporterModule}";
+      '';
 
       commonHttpConfig = optionalString cfg.accessLogToJournal ''
         # Custom log format that includes `$request_time`
@@ -158,20 +180,70 @@ in
       virtualHosts = {
         # No need to expose this to the entire system
         "localhost" = mkIf cfg.statusPage {
-          listen = [ { addr = "unix:/var/run/nginx/nginx.sock"; } ];
+          listen = [
+            { addr = "unix:/var/run/nginx/nginx.sock"; }
+            # NOTE: alloy can't scrape from unix sockets
+            # TODO: TLS?
+            { addr = "[::1]"; }
+            { addr = "127.0.0.1"; }
+          ];
           locations."/nginx_status" = {
             extraConfig = ''
               allow unix:;
             '';
           };
+          locations."/metrics" = {
+            extraConfig = ''
+              allow unix:;
+              allow 127.0.0.1;
+              allow ::1;
+              deny all;
+
+              access_log off;
+              prometheus_exporter on;
+            '';
+          };
+
         };
       } // (lib.mapAttrs (lib.const (lib.getAttr "virtualHostOptions")) reverseProxies);
     };
 
-    systemd.services.nginx = {
-      serviceConfig = {
-        # Create the /var/run dir for the nginx localhost socket
-        RuntimeDirectory = "nginx";
+    systemd.services = mkIf lcfg.enable {
+      nginx = {
+        serviceConfig = {
+          # Create the /var/run dir for the nginx localhost socket
+          RuntimeDirectory = "nginx";
+          Requires = "nginx-socket-chgrp";
+        };
+      };
+
+      nginx-socket-chgrp = {
+        wantedBy = [ "nginx.service" ];
+        after = [ "nginx.service" ];
+        preStart = ''
+          while [ ! -S /var/run/nginx/nginx.sock ]; do sleep 1; done
+        '';
+        # TODO: Adjus limitations for `prestart`
+        # serviceConfig = self.lib.templates.systemd.serviceConfig // {
+        serviceConfig = {
+          Type = "oneshot";
+          User = "nginx";
+          Group = "nginx-socket";
+          PrivateUsers = "self";
+          ExecStart = "${pkgs.coreutils}/bin/chgrp nginx-socket /run/nginx/nginx.sock";
+          # CapabilityBoundingSet = [
+          #   "CAP_CHOWN"
+          # ];
+          # SystemCallFilter = [
+          #   "@chown"
+          #   "@file-system"
+          #   "@resources"
+          #   "@basic-io"
+          #   "@io-event"
+          #   "@network-io"
+          #   "@process"
+          # ];
+        };
       };
     };
 

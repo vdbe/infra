@@ -154,7 +154,7 @@ in
             facility = "SYSLOG_FACILITY",
             // facility_label = "SYSLOG_FACILITY",
             identifier = "SYSLOG_IDENTIFIER",
-            instance_name = "_HOSTNAME",
+            instance = "_HOSTNAME",
             msg = "MESSAGE",
             priority = "PRIORITY",
             // priority_label = "PRIORITY",
@@ -217,7 +217,7 @@ in
             "facility" = "",
             "facility_label" = "",
             "identifier" = "",
-            "instance_name" = "",
+            "instance" = "",
             "priority" = "",
             "priority_label" = "",
             "transport" = "",
@@ -235,7 +235,7 @@ in
             "facility",
             "facility_label",
             "identifier",
-            "instance_name",
+            "instance",
             "priority",
             "priority_label",
             "transport",
@@ -302,18 +302,68 @@ in
       }
     }
 
-    prometheus.exporter.self "example" {}
+    prometheus.exporter.self "default" {}
 
-    prometheus.exporter.unix "default" { }
+    prometheus.exporter.unix "default" {
+      enable_collectors = [
+        // collectors for node exporter full
+        "arp",
+        "conntrack",
+        "cpu",
+        "cpufreq",
+        "diskstats",
+        "entropy",
+        "filefd",
+        "filesystem",
+        "hwmon",
+        "interrupts",
+        "loadavg",
+        "meminfo",
+        "netclass",
+        "netdev",
+        "netstat",
+        "perf",
+        "powersupplyclass",
+        "pressure",
+        "processes",
+        "schedstat",
+        "sockstat",
+        "softnet",
+        "stat",
+        "systemd",
+        "tcpstat",
+        "textfile",
+        "thermal_zone",
+        "time",
+        "timex",
+        "uname",
+        "vmstat",
+      ]
+    }
+
+    prometheus.scrape "blackbox_scraper" {
+            targets = [
+        {"__address__" = "localhost", __scheme__ = "http", instance = "${config.networking.hostName}" },
+      ]
+
+      forward_to = [prometheus.remote_write.default.receiver]
+
+      scrape_interval = "10s"
+      metrics_path    = "/metrics"
+    }
 
     prometheus.scrape "default" {
-      targets    = prometheus.exporter.self.example.targets
+      targets    = concat(
+          prometheus.exporter.self.default.targets,
+          prometheus.exporter.unix.default.targets,
+        )
 
       forward_to = [prometheus.remote_write.default.receiver]
     }
   '';
   systemd.services.alloy = {
     serviceConfig = {
+      SupplementaryGroups = "nginx-socket";
       Environment = [
         "LOKI_CERT_FILE=${config.clan.core.vars.generators."alloy-loki-client".files."fullchain".path}"
         "LOKI_KEY_FILE=%d/LOKI_KEY"
